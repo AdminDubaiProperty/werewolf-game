@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Werewolf - Dubai Property</title>
+<style>
+:root {
+  --gold: #D4AF37;
+  --blue: #1e3a8a;
+  --dark: #0a0e27;
+  --dark2: #111540;
+  --text: #f0e6c8;
+  --red: #dc2626;
+  --green: #16a34a;
+  --font: 'Segoe UI', system-ui, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--dark);
+  color: var(--text);
+  font-family: var(--font);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px;
+  overflow-x: hidden;
+}
+h1 { color: var(--gold); font-size: 1.8rem; text-align: center; margin-bottom: 4px; }
+.decor { color: var(--gold); text-align: center; font-size: 1.2rem; margin-bottom: 16px; opacity: 0.7; }
+.card {
+  background: var(--dark2);
+  border: 1px solid var(--gold);
+  border-radius: 12px;
+  padding: 20px;
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 12px;
+  box-shadow: 0 0 20px rgba(212,175,55,0.1);
+}
+label { display: block; color: var(--gold); font-size: 0.85rem; margin-bottom: 4px; }
+input, select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  background: var(--dark);
+  color: var(--text);
+  font-size: 1rem;
+  margin-bottom: 10px;
+}
+.btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  margin-bottom: 8px;
+  transition: transform 0.1s;
+}
+.btn:active { transform: scale(0.97); }
+.btn-gold { background: var(--gold); color: var(--dark); }
+.btn-blue { background: var(--blue); color: white; }
+.btn-red { background: var(--red); color: white; }
+.btn-green { background: var(--green); color: white; }
+.btn-sm { font-size: 0.9rem; padding: 10px; }
+.hidden { display: none; }
+.toggle { display: flex; gap: 8px; margin-bottom: 16px; }
+.toggle-btn {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid var(--gold);
+  background: transparent;
+  color: var(--gold);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+.toggle-btn.active { background: var(--gold); color: var(--dark); }
+.role-badge {
+  display: inline-block;
+  font-size: 2.5rem;
+  padding: 16px;
+  background: var(--dark);
+  border: 2px solid var(--gold);
+  border-radius: 16px;
+  margin: 12px 0;
+}
+.role-name { color: var(--gold); font-size: 1.3rem; font-weight: bold; margin-bottom: 8px; }
+.role-desc { font-size: 0.9rem; opacity: 0.8; }
+.phase-title {
+  text-align: center;
+  font-size: 1.5rem;
+  color: var(--gold);
+  margin-bottom: 12px;
+}
+.player-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+.player-btn {
+  padding: 12px;
+  border: 1px solid var(--gold);
+  background: var(--dark);
+  color: var(--text);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  text-align: center;
+}
+.player-btn.selected { background: var(--gold); color: var(--dark); }
+.player-btn.dead { opacity: 0.4; text-decoration: line-through; }
+.status-bar {
+  text-align: center;
+  padding: 8px;
+  background: var(--dark2);
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  font-size: 0.9rem;
+}
+.gm-panel { border-color: var(--blue); }
+.gm-badge { background: var(--blue); color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; }
+.error { color: var(--red); font-size: 0.85rem; text-align: center; margin-bottom: 8px; }
+.success { color: var(--green); font-size: 0.85rem; text-align: center; margin-bottom: 8px; }
+.log { background: var(--dark); border-radius: 8px; padding: 12px; max-height: 200px; overflow-y: auto; font-size: 0.85rem; }
+.log-entry { padding: 4px 0; border-bottom: 1px solid rgba(212,175,55,0.2); }
+.vote-count { font-weight: bold; color: var(--gold); }
+.waiting { text-align: center; padding: 40px; color: var(--gold); font-size: 1.1rem; }
+.waiting span { display: block; font-size: 3rem; margin-bottom: 12px; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.icon { font-size: 1.4rem; margin-right: 4px; }
+.seer-result { background: var(--dark); border: 2px solid var(--gold); border-radius: 12px; padding: 20px; text-align: center; margin: 12px 0; }
+.seer-result .role { font-size: 2rem; font-weight: bold; color: var(--gold); }
+#night-instruction { font-size: 1.1rem; text-align: center; padding: 30px; color: var(--gold); }
+</style>
+</head>
+<body>
+<h1>🐺 Werewolf</h1>
+<div class="decor">✦ Dubai Property 2026 ✦</div>
+
+<div id="app">
+  <!-- VIEW SELECTOR -->
+  <div class="card" id="view-selector">
+    <div class="toggle">
+      <button class="toggle-btn active" onclick="setView('player')">👤 Speler</button>
+      <button class="toggle-btn" onclick="setView('gm')">🎭 Spelleider</button>
+    </div>
+    <div id="view-content"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
+<script>
+const SUPABASE_URL = 'https://dldsgtjzwytxdfszwqlb.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsZHNndGp6d3l0eGRmc3p3cWxiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2OTUxOTIsImV4cCI6MjA4ODI3MTE5Mn0.OaU_w8c7LiIurP4yn9xgmJ9bzjLw-jNCVx1RNZ4Qmog';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+let currentView = 'player';
+let gameState = { phase: 'lobby', players: [], myRole: null, myName: null, gameCode: null, gameId: null, isGM: false, nightStep: 'wolves', dead: null };
+
+// ─── VIEW ROUTER ──────────────────────────────────────────────
+function setView(v) {
+  currentView = v;
+  document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  render();
+}
+
+function render() {
+  const c = document.getElementById('view-content');
+  if (currentView === 'player') renderPlayer(c);
+  else renderGM(c);
+}
+
+// ─── PLAYER VIEW ──────────────────────────────────────────────
+function renderPlayer(el) {
+  if (!gameState.gameId) { renderLobbyPlayer(el); return; }
+  if (gameState.phase === 'lobby') { renderLobbyPlayer(el); return; }
+  if (gameState.phase === 'night') { renderNight(el); return; }
+  if (gameState.phase === 'day') { renderDay(el); return; }
+  if (gameState.phase === 'vote') { renderVote(el); return; }
+  if (gameState.phase === 'end') { renderEnd(el); return; }
+}
+
+function renderLobbyPlayer(el) {
+  el.innerHTML = `
+    <label>Aantal spelers</label>
+    <select id="player-count">
+      <option value="6">6 spelers</option>
+      <option value="8" selected>8 spelers</option>
+      <option value="10">10 spelers</option>
+      <option value="12">12 spelers</option>
+    </select>
+    <label>Spelcode (6 cijfers)</label>
+    <input id="game-code" placeholder="123456" maxlength="6" inputmode="numeric">
+    <button class="btn btn-gold" onclick="createGame()">🎭 Nieuw Spel Aanmaken</button>
+    <div style="text-align:center;margin:8px 0;color:var(--gold);opacity:0.6">— of —</div>
+    <label>Jouw naam</label>
+    <input id="player-name" placeholder="Naam">
+    <button class="btn btn-blue" onclick="joinGame()">🚪 Meedoen</button>
+    <div id="lobby-msg"></div>
+  `;
+}
+
+async function createGame() {
+  const count = parseInt(document.getElementById('player-count').value);
+  const name = document.getElementById('player-name').value.trim() || prompt('Je naam:');
+  if (!name) return;
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const { data, error } = await supabase.from('werewolf_games').insert({
+    game_code: code, created_by: name,
+    settings: { roles: buildRoles(count) }
+  }).select().single();
+  if (error) { showError('Kon spel niet maken: ' + error.message); return; }
+  const { error: e2 } = await supabase.from('werewolf_players').insert({ game_id: data.id, player_name: name, player_role: 'gm' });
+  if (e2) { showError(e2.message); return; }
+  gameState = { ...gameState, gameId: data.id, gameCode: code, myName: name, isGM: true, phase: 'lobby' };
+  localStorage.setItem('werewolf_state', JSON.stringify(gameState));
+  showSuccess('Spelcode: ' + code + ' — deel deze met spelers!');
+  renderLobbyPlayer(document.getElementById('view-content'));
+}
+
+async function joinGame() {
+  const name = document.getElementById('player-name').value.trim();
+  const code = document.getElementById('game-code').value.trim();
+  if (!name || !code) { showError('Vul naam én spelcode in'); return; }
+  const { data: games } = await supabase.from('werewolf_games').select('*').eq('game_code', code).single();
+  if (!games) { showError('Spel niet gevonden'); return; }
+  const { data: existing } = await supabase.from('werewolf_players').select('*').eq('game_id', games.id).eq('player_name', name).single();
+  if (existing) {
+    gameState = { ...gameState, gameId: games.id, gameCode: code, myName: name, phase: games.phase, isGM: false };
+  } else {
+    const { data: newPlayer, error } = await supabase.from('werewolf_players').insert({ game_id: games.id, player_name: name }).select().single();
+    if (error) { showError(error.message); return; }
+    gameState = { ...gameState, gameId: games.id, gameCode: code, myName: name, phase: games.phase, isGM: false };
+  }
+  localStorage.setItem('werewolf_state', JSON.stringify(gameState));
+  subscribeToGame();
+  render();
+}
+
+function showError(msg) { const m = document.getElementById('lobby-msg'); if (m) m.innerHTML = '<div class="error">' + msg + '</div>'; }
+function showSuccess(msg) { const m = document.getElementById('lobby-msg'); if (m) m.innerHTML = '<div class="success">' + msg + '</div>'; }
+
+async function renderNight(el) {
+  const me = await getMyPlayer();
+  if (!me) { renderLobbyPlayer(el); return; }
+  if (!me.player_role || me.player_role === 'gm') {
+    el.innerHTML = `<div class="waiting"><span>🌙</span>Nacht — wacht op spelers...</div>`;
+    return;
+  }
+  if (me.player_role === 'werewolf') {
+    renderWerewolfNight(el, me);
+  } else if (me.player_role === 'seer') {
+    renderSeerNight(el, me);
+  } else if (me.player_role === 'medic') {
+    renderMedicNight(el, me);
+  } else {
+    el.innerHTML = `<div id="night-instruction">🌙 Sluit je ogen en wacht...<br><br><small>Wachten tot de werewolves klaar zijn</small></div>`;
+  }
+}
+
+async function renderWerewolfNight(el, me) {
+  const { data: players } = await supabase.from('werewolf_players').select('*').eq('game_id', gameState.gameId).eq('is_alive', true).neq('player_role', 'werewolf');
+  el.innerHTML = `
+    <div class="phase-title">🐺 Werewolves — Wie vermoorden?</div>
+    <div class="status-bar">Kies één speler om te verslinden</div>
+    <div class="player-grid">
+      ${(players||[]).map(p => `<button class="player-btn" onclick="werewolfKill('${p.id}')">${p.player_name}</button>`).join('')}
+    </div>
+    <div id="kill-msg"></div>
+  `;
+}
+
+async function werewolfKill(targetId) {
+  const { data: wolves } = await supabase.from('werewolf_players').select('id').eq('game_id', gameState.gameId).eq('player_role', 'werewolf');
+  const { error } = await supabase.from('werewolf_night_actions').insert({ game_id: gameState.gameId, player_id: wolves[0].id, action_type: 'kill', target_id: targetId });
+  if (error) { document.getElementById('kill-msg').innerHTML = '<div class="error">' + error.message + '</div>'; return; }
+  document.getElementById('kill-msg').innerHTML = '<div class="success">✅ Keuze gemaakt! Wachten op andere werewolves...</div>';
+  document.querySelectorAll('.player-btn').forEach(b => b.disabled = true);
+}
+
+async function renderSeerNight(el, me) {
+  const { data: players } = await supabase.from('werewolf_players').select('*').eq('game_id', gameState.gameId).eq('is_alive', true).neq('id', me.id);
+  el.innerHTML = `
+    <div class="phase-title">👁️ Seer — Wie controleren?</div>
+    <div class="status-bar">Kies iemand om te checken</div>
+    <div class="player-grid">
+      ${(players||[]).map(p => `<button class="player-btn" onclick="seerCheck('${p.id}')">${p.player_name}</button>`).join('')}
+    </div>
+    <div id="seer-msg"></div>
+  `;
+}
+
+async function seerCheck(targetId) {
+  const { data: target } = await supabase.from('werewolf_players').select('*').eq('id', targetId).single();
+  const { error } = await supabase.from('werewolf_night_actions').insert({ game_id: gameState.gameId, player_id: gameState.myPlayerId, action_type: 'check', target_id: targetId });
+  if (error) { document.getElementById('seer-msg').innerHTML = '<div class="error">' + error.message + '</div>'; return; }
+  document.getElementById('seer-msg').innerHTML = `<div class="seer-result"><div class="role-name">Resultaat:</div><div class="role">${target.player_role === 'werewolf' ? '🐺 Werewolf!' : '👤 ' + target.player_role}</div></div>`;
+  document.querySelectorAll('.player-btn').forEach(b => b.disabled = true);
+}
+
+async function renderMedicNight(el, me) {
+  const { data: players } = await supabase.from('werewolf_players').select('*').eq('game_id', gameState.gameId).eq('is_alive', true);
+  el.innerHTML = `
+    <div class="phase-title">💚 Medic — Wie beschermen?</div>
+    <div class="status-bar">Kies jezelf of een speler om te beschermen</div>
+    <div class="player-grid">
+      ${(players||[]).map(p => `<button class="player-btn" onclick="medicProtect('${p.id}')">${p.player_name}</button>`).join('')}
+    </div>
+    <div id="medic-msg"></div>
+  `;
+}
+
+async function medicProtect(targetId) {
+  const { error } = await supabase.from('werewolf_night_actions').insert({ game_id: gameState.gameId, player_id: gameState.myPlayerId, action_type: 'protect', target_id: targetId });
+  if (error) { document.getElementById('medic-msg').innerHTML = '<div class="error">' + error.message + '</div>'; return; }
+  document.getElementById('medic-msg').innerHTML = '<div class="success">✅ Bescherming ingesteld!</div>';
+  document.querySelectorAll('.player-btn').forEach(b => b.disabled = true);
+}
+
+async function renderDay(el) {
+  const { data: dead } = await supabase.from('werewolf_players').select('*').eq('game_id', gameState.gameId).eq('is_alive', false).order('joined_at', { ascending: false }).limit(1);
+  const me = await getMyPlayer();
+  el.innerHTML = `
+    <div class="phase-title">☀️ Dag is aangebroken</div>
+    ${dead && dead.length ? `<div class="status-bar">💀 ${dead[0].player_name} is gestorven! Rol: ${roleEmoji(dead[0].player_role)} ${dead[0].player_role}</div>` : '<div class="status-bar">Niemand gestorven vannacht</div>'}
+    <div style="font-size:0.9rem;text-align:center;opacity:0.7;margin:8px 0">Wachten tot de spelleider de stemming start...</div>
+  `;
+}
+
+async function renderVote(el) {
+  const { data: players } = await supabase.from('werewolf_players').select('*').eq('game_id', gameState.gameId).eq('is_alive', true);
+  const me = await getMyPlayer();
+  el.innerHTML = `
+    <div class="phase-title">🗳️ Stemmen — Wie wegstemmen?</div>
+    <div class="player-grid">
+      ${(players||[]).filter(p => p.id !== me?.id).map(p => `<button class="player-btn" onclick="castVote('${p.id}')">${p.player_name}</button>`).join('')}
+    </div>
+    <div id="vote-status"></div>
+  `;
+}
+
+async function castVote(targetId) {
+  const me = await getMyPlayer();
+  await supabase.from('werewolf_players').update({ vote_target: targetId }).eq('id', me.id);
+  document.getElementById('vote-status').innerHTML = '<div class="success">✅ Stem uitgebracht! Wachten op anderen...</div>';
+  document.querySelectorAll('.player-btn').forEach(b => b.disabled = true);
+}
+
+async function renderEnd(el) {
+  el.innerHTML = `<div class="waiting"><span>🏆</span>Spel afgelopen!</div>`;
+}
+
+function roleEmoji(r) {
+  return { werewolf: '🐺', seer: '👁️', medic: '💚', citizen: '👤', gm: '🎭' }[r] || '❓';
+}
+
+// ─── GM VIEW ──────────────────────────────────────────────────
+function renderGM(el) {
+  if (!gameState.gameId || !gameState.isGM) {
+    el.innerHTML = `
+      <label>Spelcode (6 cijfers)</label>
+      <input id="gm-code" placeholder="123456" maxlength="6" inputmode="numeric">
+      <button class="btn btn-blue btn-sm" onclick="loadGMGame()">🎭 Beheer Dit Spel</button>
+      <div id="gm-msg"></div>
+    `;
+    return;
+  }
+  renderGMControls(el);
+}
+
+async function loadGMGame() {
+  const code = document.getElementById('gm-code').value.trim();
+  if (!code) return;
+  const { data: games } = await supabase.from('werewolf_games').select('*').eq('game_code', code).single();
+  if (!games) { document.getElementById('gm-msg').innerHTML = '<div class="error">Spel niet gevonden</div>'; return; }
+  gameState = { ...gameState, gameId: games.id, gameCode: code, isGM: true, phase: games.phase };
+  localStorage.setItem('werewolf_state', JSON.stringify(gameState));
+  subscribeToGame();
+  render();
+}
+
+async function renderGMControls(el) {
+  const { data: players } = await supabase.from('werewolf_players').select('*').eq('game_id', gameState.gameId).order('joined_at');
+  const { data: game } = await supabase.from('werewolf_games').select('*').eq('id', gameState.gameId).single();
+  const alive = players.filter(p => p.is_alive);
+  const phase = game?.phase || 'lobby';
+
+  let actions = '';
+  if (phase === 'lobby') {
+    actions = `
+      <button class="btn btn-gold" onclick="startGame()">🌙 Start Nacht — Spel Beginnen!</button>
+      <div style="margin-top:8px;font-size:0.85rem;opacity:0.7">${players.length} speler(s) in lobby</div>
+    `;
+  } else if (phase === 'night') {
+    actions = `
+      <button class="btn btn-blue" onclick="advanceNight()">☀️ Dag Aanbreken (Dag-Fase)</button>
+      <button class="btn btn-red btn-sm" onclick="processNight()">🔍 Verwerk Nacht-Actions</button>
+    `;
+  } else if (phase === 'day') {
+    actions = `
+      <button class="btn btn-gold" onclick="startVote()">🗳️ Start Stemming</button>
+    `;
+  } else if (phase === 'vote') {
+    actions = `
+      <button class="btn btn-red" onclick="processVote()">💀 Verwerk Stemming</button>
+      <div id="vote-tally"></div>
+    `;
+  }
+
+  el.innerHTML = `
+    <div class="card gm-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <span class="gm-badge">🎭 SPELLEIDER</span>
+        <span style="font-size:0.85rem">Fase: <b style="color:var(--gold)">${phase}</b></span>
+      </div>
+      <div style="font-size:0.9rem;color:var(--gold);margin-bottom:8px">Spelers (${players.length})</div>
+      <div style="max-height:200px;overflow-y:auto">
+        ${players.map(p => `
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(212,175,55,0.2)">
+            <span>${p.player_name} ${!p.is_alive ? '💀' : ''}</span>
+            <span>${p.player_role ? roleEmoji(p.player_role) + ' ' + p.player_role : '—'}</span>
+          </div>
+        `).join('')}
+      </div>
+      <div style="margin-top:12px">${actions}</div>
+    </div>
+    <div class="card" id="seer-input-area" class="hidden"></div>
+  `;
+
+  // Show seer results if any
+  if (phase === 'night') {
+    const { data: checks } = await supabase.from('werewolf_night_actions').select('*,target:target_id(*),player:player_id(*)').eq('game_id', gameState.gameId).eq('action_type', 'check');
+    if (checks && checks.length) {
+      const check = checks[0];
+      const target = check.target;
+      el.innerHTML += `
+        <div class="card">
+          <div style="font-size:0.85rem;color:var(--gold);margin-bottom:4px">👁️ Seer check resultaat:</div>
+          <div>Seer checkte <b>${target.player_name}</b> → <b>${roleEmoji(target.player_role)} ${target.player_role}</b></div>
+        </div>
+      `;
+    }
+  }
+
+  // Vote tally
+  if (phase === 'vote') {
+    const { data: voting } = await supabase.from('werewolf_players').select('*').eq('game_id', gameState.gameId).eq('is_alive', true).not('vote_target', 'is', null);
+    if (voting && voting.length) {
+      const tally = {};
+      voting.forEach(v => { tally[v.vote_target] = (tally[v.vote_target] || 0) + 1; });
+      const { data: allPlayers } = await supabase.from('werewolf_players').select('*').eq('game_id', gameState.gameId);
+      let html = '<div style="margin-top:8px">';
+      Object.entries(tally).forEach(([tid, count]) => {
+        const p = allPlayers.find(p => p.id === tid);
+        html += `<div>🗳️ <b>${p?.player_name}</b>: ${count} stem(men)</div>`;
+      });
+      html += '</div>';
+      const vt = document.getElementById('vote-tally');
+      if (vt) vt.innerHTML = html;
+    }
+  }
+}
+
+// ─── GAME LOGIC ──────────────────────────────────────────────
+function buildRoles(count) {
+  const roles = [];
+  if (count >= 6) roles.push('werewolf', 'werewolf');
+  if (count >= 7) roles.push('seer');
+  if (count >= 9) roles.push('medic');
+  while (roles.length < count - 2) roles.push('citizen');
+  roles.push('citizen', 'citizen');
+  return roles;
+}
+
+async function startGame() {
+  const { data: players } = await supabase.from('werewolf_players').select('*').eq('game_id', gameState.gameId);
+  const { data: game } = await supabase.from('werewolf_games').select('*').eq('id', gameState.gameId).single();
+  const roleList = buildRoles(players.length);
+  const shuffled = roleList.sort(() => Math.random() - 0.5);
+  for (let i = 0; i < players.length; i++) {
+    const role = i === 0 ? 'gm' : shuffled[i];
+    await supabase.from('werewolf_players').update({ player_role: role }).eq('id', players[i].id);
+  }
+  await supabase.from('werewolf_games').update({ phase: 'night', night_step: 'wolves' }).eq('id', gameState.gameId);
+  gameState.phase = 'night';
+  localStorage.setItem('werewolf_state', JSON.stringify(gameState));
+  render();
+}
+
+async function advanceNight() {
+  await supabase.from('werewolf_games').update({ phase: 'day' }).eq('id', gameState.gameId);
+  gameState.phase = 'day';
+  localStorage.setItem('werewolf_state', JSON.stringify(gameState));
+  render();
+}
+
+async function processNight() {
+  const { data: actions } = await supabase.from('werewolf_night_actions').select('*').eq('game_id', gameState.gameId);
+  const kills = actions.filter(a => a.action_type === 'kill');
+  const protects = actions.filter(a => a.action_type === 'protect');
+  let victim = kills.length ? kills[kills.length - 1].target_id : null;
+  if (victim && protects.length) {
+    const lastProtect = protects[protects.length - 1].target_id;
+    if (lastProtect === victim) victim = null;
+  }
+  if (victim) {
+    await supabase.from('werewolf_players').update({ is_alive: false }).eq('id', victim);
+  }
+  await supabase.from('werewolf_night_actions').delete().eq('game_id', gameState.gameId);
+  await supabase.from('werewolf_games').update({ phase: 'day' }).eq('id', gameState.gameId);
+  gameState.phase = 'day';
+  localStorage.setItem('werewolf_state', JSON.stringify(gameState));
+  render();
+}
+
+async function startVote() {
+  await supabase.from('werewolf_games').update({ phase: 'vote' }).eq('id', gameState.gameId);
+  gameState.phase = 'vote';
+  localStorage.setItem('werewolf_state', JSON.stringify(gameState));
+  render();
+}
+
+async function processVote() {
+  const { data: voters } = await supabase.from('werewolf_players').select('*').eq('game_id', gameState.gameId).eq('is_alive', true).not('vote_target', 'is', null);
+  const { data: allPlayers } = await supabase.from('werewolf_players').select('*').eq('game_id', gameState.gameId).eq('is_alive', true);
+  if (voters.length < Math.ceil(allPlayers.length / 2)) {
+    alert('Niet genoeg stemmen ontvangen!');
+    return;
+  }
+  const tally = {};
+  voters.forEach(v => { tally[v.vote_target] = (tally[v.vote_target] || 0) + 1; });
+  const winner = Object.entries(tally).sort((a, b) => b[1] - a[1])[0];
+  const eliminated = allPlayers.find(p => p.id === winner[0]);
+  if (eliminated) {
+    await supabase.from('werewolf_players').update({ is_alive: false }).eq('id', eliminated.id);
+  }
+  // Check win condition
+  const { data: remaining } = await supabase.from('werewolf_players').select('*').eq('game_id', gameState.gameId).eq('is_alive', true);
+  const wolves = remaining.filter(p => p.player_role === 'werewolf').length;
+  if (wolves === 0) {
+    await supabase.from('werewolf_games').update({ phase: 'end' }).eq('id', gameState.gameId);
+    alert('🧔 Burgers winnen! Alle werewolves zijn uitgeschakeld!');
+  } else if (wolves >= remaining.length - wolves) {
+    await supabase.from('werewolf_games').update({ phase: 'end' }).eq('id', gameState.gameId);
+    alert('🐺 Werewolves winnen!');
+  } else {
+    await supabase.from('werewolf_games').update({ phase: 'night', night_step: 'wolves' }).eq('id', gameState.gameId);
+    await supabase.from('werewolf_players').update({ vote_target: null }).eq('game_id', gameState.gameId);
+    gameState.phase = 'night';
+  }
+  localStorage.setItem('werewolf_state', JSON.stringify(gameState));
+  render();
+}
+
+async function getMyPlayer() {
+  if (!gameState.gameId) return null;
+  const { data } = await supabase.from('werewolf_players').select('*').eq('game_id', gameState.gameId).eq('player_name', gameState.myName).single();
+  if (data) gameState.myPlayerId = data.id;
+  return data;
+}
+
+// ─── REALTIME SUBSCRIPTIONS ───────────────────────────────────
+function subscribeToGame() {
+  if (!gameState.gameId) return;
+  supabase.channel('game-' + gameState.gameId)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'werewolf_games', filter: 'id=eq.' + gameState.gameId }, payload => {
+      if (payload.new && payload.new.phase !== gameState.phase) {
+        gameState.phase = payload.new.phase;
+        localStorage.setItem('werewolf_state', JSON.stringify(gameState));
+        render();
+      }
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'werewolf_players', filter: 'game_id=eq.' + gameState.gameId }, () => {
+      if (gameState.isGM) render();
+    })
+    .subscribe();
+}
+
+// ─── INIT ─────────────────────────────────────────────────────
+function init() {
+  const saved = localStorage.getItem('werewolf_state');
+  if (saved) {
+    try {
+      gameState = { ...gameState, ...JSON.parse(saved) };
+      if (gameState.gameId) subscribeToGame();
+    } catch(e) {}
+  }
+  render();
+}
+init();
+</script>
+</body>
+</html>
